@@ -50,13 +50,14 @@
         sans-serif;
       background: var(--bg-dark);
       color: var(--text-primary);
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
+      /* Prevent scrolling */
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
       position: relative;
-      overflow-x: hidden;
     }
 
     body::before {
@@ -98,44 +99,50 @@
       background: var(--bg-glass);
       backdrop-filter: blur(20px);
       border-radius: var(--radius-lg);
-      padding: 40px;
+      padding: 30px;
       box-shadow: var(--shadow-xl);
       border: 1px solid hsla(0, 0%, 100%, 0.1);
+      max-height: 95vh;
+      display: flex;
+      flex-direction: column;
+      /* overflow-y: auto; Allow internal scrolling if absolutely needed on very small screens */
     }
 
     .game-header {
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
+      flex-shrink: 0;
     }
 
     .game-title {
-      font-size: clamp(2rem, 5vw, 3rem);
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
       font-weight: 800;
       background: linear-gradient(135deg, var(--primary), var(--secondary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
       line-height: 1.2;
     }
 
     .game-subtitle {
       color: var(--text-secondary);
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     .controls {
       display: flex;
-      gap: 20px;
-      margin-bottom: 30px;
+      gap: 15px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
 
     .stats {
       display: flex;
-      gap: 20px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
@@ -213,23 +220,32 @@
 
     .cards-grid {
       display: grid;
-      gap: 15px;
-      margin-bottom: 30px;
+      gap: 10px;
+      margin-bottom: 20px;
       perspective: 1000px;
+      flex: 1;
+      /* Take remaining space */
+      min-height: 0;
+      /* Allow shrinking */
+      place-content: center;
     }
 
     .cards-grid.grid-4x4 {
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(60px, 12vh));
+      grid-template-rows: repeat(4, minmax(60px, 12vh));
     }
 
     .cards-grid.grid-6x6 {
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(6, minmax(40px, 9vh));
+      grid-template-rows: repeat(6, minmax(40px, 9vh));
     }
 
     .card-wrapper {
       aspect-ratio: 1;
       cursor: pointer;
       perspective: 1000px;
+      width: 100%;
+      height: 100%;
     }
 
     .card {
@@ -698,6 +714,17 @@
           this.timer = 0;
           this.stopTimer();
           this.loadBestScore();
+
+          // Preview: Flip all cards
+          this.isPreviewing = true;
+          this.cards.forEach(card => card.flipped = true);
+
+          // Hide after delay depending on difficulty
+          const previewTime = this.difficulty === 'easy' ? 2000 : 4000;
+          setTimeout(() => {
+            this.cards.forEach(card => card.flipped = false);
+            this.isPreviewing = false;
+          }, previewTime);
         },
         shuffle(array) {
           const shuffled = [...array];
@@ -710,8 +737,8 @@
         flipCard(index) {
           const card = this.cards[index];
 
-          // Don't flip if already flipped, matched, or two cards are already flipped
-          if (card.flipped || card.matched || this.flippedCards.length >= 2) {
+          // Don't flip if already flipped, matched, or two cards are already flipped, or during preview
+          if (this.isPreviewing || card.flipped || card.matched || this.flippedCards.length >= 2) {
             return;
           }
 
